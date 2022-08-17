@@ -33,11 +33,10 @@ function App() {
 
   const getSensorData = async () => {
     const { data } = await axios.get('http://www.quillsecure.com/api/dashboard/stats');
-    const filteredData = data.reduce((prev, curr, i) => (i % 30 === 0 ? [...prev, curr] : prev), []);
-    const td = filteredData.map((d) => ({ x: d.unixTS * 1000, y: d.temperatureF }));
-    const hd = filteredData.map((d) => ({ x: d.unixTS * 1000, y: d.humidity }));
-    const pd = filteredData.map((d) => ({ x: d.unixTS * 1000, y: d.pressure }));
-    const vd = filteredData.map((d) => ({ x: d.unixTS * 1000, y: d.vocIndex }));
+    const td = data.map((d) => ({ x: d.unixTS * 1000, y: d.temperatureF }));
+    const hd = data.map((d) => ({ x: d.unixTS * 1000, y: d.humidity }));
+    const pd = data.map((d) => ({ x: d.unixTS * 1000, y: d.pressure }));
+    const vd = data.map((d) => ({ x: d.unixTS * 1000, y: d.vocIndex }));
 
     setTempData(td);
     setHumidityData(hd);
