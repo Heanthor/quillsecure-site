@@ -1,4 +1,3 @@
-import './App.css';
 import { Line } from 'react-chartjs-2';
 import axios from 'axios';
 import { React, useState, useEffect } from 'react';
@@ -25,27 +24,39 @@ ChartJS.register(
   LineElement,
 );
 
-function App() {
+function Dashboard() {
+  const [loading, setLoading] = useState(true);
   const [tempData, setTempData] = useState(null);
   const [humidityData, setHumidityData] = useState(null);
   const [vocData, setVocData] = useState(null);
-  const [pressureData, setPressureData] = useState(null);
+  const [activeSensors, setActiveSensors] = useState(0);
 
   const getSensorData = async () => {
-    const { data } = await axios.get('http://www.quillsecure.com/api/dashboard/stats');
+    const { data } = await axios.get('https://quillsecure.com/api/dashboard/stats?days=1');
     const td = data.map((d) => ({ x: d.unixTS * 1000, y: d.temperatureF }));
     const hd = data.map((d) => ({ x: d.unixTS * 1000, y: d.humidity }));
-    const pd = data.map((d) => ({ x: d.unixTS * 1000, y: d.pressure }));
+
     const vd = data.map((d) => ({ x: d.unixTS * 1000, y: d.vocIndex }));
 
     setTempData(td);
     setHumidityData(hd);
     setVocData(vd);
-    setPressureData(pd);
+  };
+
+  const getActiveSensors = async () => {
+    try {
+      const { data } = await axios.get('https://quillsecure.com/api/dashboard/sensorsConnected');
+
+      setActiveSensors(data.activeSensors);
+    } catch (e) {
+      setActiveSensors(0);
+    }
   };
 
   useEffect(() => {
     getSensorData();
+    getActiveSensors();
+    setLoading(false);
   }, []);
 
   const chartData = {
@@ -68,13 +79,6 @@ function App() {
       borderColor: 'rgb(54, 250, 64)',
       tension: 0.1,
       yAxisID: 'y2',
-    },
-    {
-      label: 'Pressure (mbar)',
-      data: pressureData,
-      borderColor: 'rgb(204, 54, 250)',
-      tension: 0.1,
-      yAxisID: 'y3',
     }],
   };
 
@@ -96,6 +100,7 @@ function App() {
         ticks: {
           color: 'rgb(75, 192, 192)',
         },
+        min: 60,
       },
       y1: {
         type: 'linear',
@@ -109,6 +114,7 @@ function App() {
         ticks: {
           color: 'rgb(250, 88, 54)',
         },
+        min: 0,
       },
       y2: {
         type: 'linear',
@@ -143,22 +149,36 @@ function App() {
 
   return (
     <div className="App bg-slate-200" style={{ height: '100vh' }}>
-      <div className="flex bg-slate-300 mb-6">
-        <div className="text-6xl font-bold justify-start pl-4 m-4">
+      <div className="h-24 flex bg-slate-300 mb-6 p-4">
+        <span className="text-6xl font-bold flex flex-grow">
           QuillSecure Dashboard
+        </span>
+        <div className="flex">
+          <div className="text-lg font-bold self-end">
+            {loading ? null : (
+              <div>
+                Sensors connected:
+                {' '}
+                <span className={activeSensors > 0 ? 'text-sky-500' : 'text-red-500'}>
+                  {activeSensors}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
+
       </div>
 
       <div className="container mx-auto flex justify-center items-center">
-        {tempData ? (
+        {loading ? loadingSpinner() : (
           <Line
             options={chartOptions}
             data={chartData}
           />
-        ) : loadingSpinner()}
+        )}
       </div>
     </div>
   );
 }
 
-export default App;
+export default Dashboard;
